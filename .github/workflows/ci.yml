@@ -1,0 +1,21 @@
+# Every push and pull request: scripts/check.sh on Linux (clippy, every test, 100% of
+# agent-core's lines), on both architectures the releases are built for.
+name: check
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    strategy:
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, llvm-tools-preview
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - run: ./scripts/check.sh

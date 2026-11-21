@@ -1,0 +1,61 @@
+# A tag v<version> (the workspace Cargo.toml's) makes a GitHub release with the files the
+# one-line installer downloads, under names that do not change, so
+# releases/latest/download/<file> is always the newest:
+#   wysebee-agent-linux-x86_64.tar.gz, wysebee-agent-linux-aarch64.tar.gz, install.sh, SHA256SUMS
+name: release
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.arch }}-unknown-linux-musl
+      - run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: The tag is the version
+        run: test "v$(grep -m1 '^version = ' Cargo.toml | cut -d'"' -f2)" = "${GITHUB_REF_NAME}"
+      - run: ./scripts/build_linux.sh ${{ matrix.arch }}
+      - name: The binary runs, and is static
+        run: |
+          tar -xzf dist/wysebee-agent-linux-${{ matrix.arch }}.tar.gz -C /tmp
+          /tmp/wysebee-agent --version
+          file /tmp/wysebee-agent | grep -E "static(-pie)? ?(linked|executable)|statically linked"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.arch }}
+          path: dist/wysebee-agent-linux-${{ matrix.arch }}.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: package-*
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        run: |
+          cp scripts/install.sh dist/install.sh
+          cd dist && sha256sum wysebee-agent-linux-*.tar.gz install.sh > SHA256SUMS && cat SHA256SUMS
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/* --title "Wysebee Agent for Linux ${GITHUB_REF_NAME#v}" \
+            --notes "Install or update: curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/install.sh | sh"
