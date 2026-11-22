@@ -54,6 +54,7 @@ wysebee-agent folder list | update <id> | remove <id>
 wysebee-agent enable any-program | developer | android     (each asks first)
 wysebee-agent disable any-program | developer | android
 wysebee-agent pause | resume             stop running anything / run again
+wysebee-agent server [<url> | default]   show or set the Wysebee Cloud server to pair with
 wysebee-agent unpair                     everything allowed here is forgotten
 wysebee-agent logs [-f]                  the service's journal
 sudo wysebee-agent service install | uninstall [--user U]
@@ -91,7 +92,7 @@ There is no screen control on Linux (servers have no screen).
 |---|---|
 | The program | `/usr/local/bin/wysebee-agent` |
 | The service | `/etc/systemd/system/wysebee-agent@.service`, instance `wysebee-agent@<account>` |
-| Settings for the service | `/etc/default/wysebee-agent` (`HTTPS_PROXY`, `WYSEBEE_CLOUD_URL`) |
+| Settings for the service | `/etc/default/wysebee-agent` (`HTTPS_PROXY`, `WYSEBEE_CLOUD_URL`: the default server) |
 | State, approvals, skills | `~/.local/state/wysebee-agent/` (mode 0700) |
 | The pairing key | `~/.local/state/wysebee-agent/secret` (mode 0600; never logged or sent elsewhere) |
 | The command line's socket | `~/.local/state/wysebee-agent/control.sock` (mode 0600) |
