@@ -32,7 +32,7 @@ use serde_json::{json, Value};
 pub const STATE_DIR_ENV: &str = "WYSEBEE_AGENT_STATE_DIR";
 
 #[derive(Parser)]
-#[command(name = "wysebee-agent", version, about = "Wysebee Agent for Linux: lets one Wysebee agent run the programs, skill scripts and folder tools you allow on this machine.", after_help = "Start here:\n  sudo wysebee-agent service install    start the agent with the machine\n  wysebee-agent pair \"My server\"        pair it with Wysebee\n  wysebee-agent status                  see what waits for your Allow")]
+#[command(name = "wysebee-agent", version, about = "Wysebee Agent for Linux: lets one Wysebee agent run the programs, skill scripts and folder tools you allow on this machine.", after_help = "Start here:\n  sudo wysebee-agent service install    start the agent with the machine\n  wysebee-agent server <url>            only for a Wysebee Cloud other than app.wysebee.com\n  wysebee-agent pair \"My server\"        pair it with Wysebee\n  wysebee-agent status                  see what waits for your Allow")]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -93,9 +93,13 @@ enum Command {
     Pause,
     /// Run programs for Wysebee again.
     Resume,
-    /// Show or set which Wysebee Cloud a new pairing uses (only while unpaired).
-    Cloud {
-        /// The address (https://…); `default` for Wysebee Cloud's own.
+    /// Show or set which Wysebee Cloud server to pair with (set it while unpaired).
+    #[command(visible_alias = "cloud")]
+    Server {
+        /// The server's address: https://…, or http:// to this machine only (like
+        /// http://localhost:8000). `default` goes back to WYSEBEE_CLOUD_URL, else Wysebee
+        /// Cloud's own (https://app.wysebee.com). Kept across restarts; it wins over
+        /// WYSEBEE_CLOUD_URL.
         url: Option<String>,
     },
     /// Start the agent with the machine (systemd), or stop doing so. Needs sudo.
@@ -225,7 +229,7 @@ fn main() {
         Command::Disable { switch } => ask(json!({"cmd": "switch", "name": switch.key(), "on": false})).map(|_| println!("Off: {}.", switch.label())),
         Command::Pause => ask(json!({"cmd": "pause"})).map(|_| println!("Paused: nothing runs for Wysebee until `wysebee-agent resume`.")),
         Command::Resume => ask(json!({"cmd": "resume"})).map(|_| println!("Running programs for Wysebee again.")),
-        Command::Cloud { url } => cloud(url),
+        Command::Server { url } => server(url),
         Command::Service(s) => service::command(s),
         Command::Logs { follow } => service::logs(follow),
     };
@@ -369,12 +373,12 @@ fn enable(switch: Switch, yes: bool) -> Result<(), String> {
     Ok(())
 }
 
-fn cloud(url: Option<String>) -> Result<(), String> {
+/// Show the server, or save another (only while unpaired: a pairing keeps its own).
+fn server(url: Option<String>) -> Result<(), String> {
     if let Some(url) = url {
-        let url = if url == "default" { String::new() } else { url };
+        let url = if url.trim() == "default" { String::new() } else { url };
         ask(json!({"cmd": "cloud_url", "url": url}))?;
     }
-    let s = ask(json!({"cmd": "status"}))?;
-    println!("{} ({})", s["cloud_url"].as_str().unwrap_or(""), s["cloud_url_source"].as_str().unwrap_or(""));
+    print!("{}", show::server(&ask(json!({"cmd": "status"}))?));
     Ok(())
 }

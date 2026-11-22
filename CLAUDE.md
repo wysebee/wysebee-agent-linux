@@ -12,9 +12,10 @@ install and test it.
 
 ## What binds
 
-- **`docs/protocol.md` is the contract** with Wysebee Cloud, as this agent speaks it (the
-  Mac and Windows agents speak the same link). A change to it is a change in the cloud and
-  the other agents too; do not change it to suit this code — raise it with the owner.
+- **`wysebee-cloud/docs/protocol/computer.md` is the contract** with Wysebee Cloud (the Mac and
+  Windows agents speak the same link); `docs/protocol.md` here describes it as this agent
+  speaks it, and must agree with it. A change to the contract is a change in the cloud and the
+  other agents too; do not change it to suit this code — raise it with the owner.
 - **Never widen what runs without the owner's say.** The person names the program and its
   fixed arguments in Wysebee and allows it here (`wysebee-agent allow`); the model only
   fills blanks. No shell, no model- or cloud-chosen program, no input, no working folder a

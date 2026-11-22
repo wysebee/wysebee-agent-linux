@@ -27,9 +27,11 @@ poll, and it posts each answer back.
 
 ## The cloud's address
 
-`https://app.wysebee.com` unless `WYSEBEE_CLOUD_URL` names another. An address must be
-`https`, or plain `http` to this machine (loopback, for development): the secret and every
-call's values and output go there. All routes are under **`/api/v1/agent-links`**. The
+The one saved with `wysebee-agent server <url>` (kept across restarts), else
+`WYSEBEE_CLOUD_URL` when set, else `https://app.wysebee.com`; `wysebee-agent server default`
+clears the saved one. It is set while unpaired: **a pairing keeps the cloud it was made
+with**. An address must be `https`, or plain `http` to this machine (loopback, for
+development): the secret and every call's values and output go there. All routes are under **`/api/v1/agent-links`**. The
 agent's own routes carry its secret as `Authorization: Bearer <secret>`; redirects are not
 followed, so the secret goes nowhere else.
 
